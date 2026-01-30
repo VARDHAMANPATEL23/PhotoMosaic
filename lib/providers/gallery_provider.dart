@@ -36,6 +36,10 @@ class GalleryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<Uint8List?> getImageFromStorage(String path) {
+    return _storage.getImage(path);
+  }
+
   // --- Upload & Process Images (With Progress Bar) ---
   Future<void> pickAndProcessImages() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(

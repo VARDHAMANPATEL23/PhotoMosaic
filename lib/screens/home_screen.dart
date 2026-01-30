@@ -35,12 +35,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (result != null) {
-      if(mounted) {
+      if (mounted) {
         ShadToaster.of(context).show(
-            const ShadToast(
+          const ShadToast(
             title: Text('Generating Mosaic...'),
             description: Text('This may take a moment based on complexity.'),
-            ),
+          ),
         );
       }
 
@@ -62,30 +62,31 @@ class _HomeScreenState extends State<HomeScreen> {
             if (gallery.generatedMosaic != null) {
               _showResultDialog(gallery.generatedMosaic!);
             } else {
-               _showErrorDialog();
+              _showErrorDialog();
             }
           }
         } catch (e) {
-             _showErrorDialog();
+          _showErrorDialog();
         }
       }
     }
   }
-  
+
   void _showErrorDialog() {
-       showShadDialog(
-        context: context,
-        builder: (context) => ShadDialog.alert(
-          title: const Text('Generation Failed'),
-          description: const Text("The mosaic could not be generated. Check logs."),
-          actions: [
-            ShadButton.outline(
-              child: const Text('OK'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-          ],
-        ),
-      );
+    showShadDialog(
+      context: context,
+      builder: (context) => ShadDialog.alert(
+        title: const Text('Generation Failed'),
+        description:
+            const Text("The mosaic could not be generated. Check logs."),
+        actions: [
+          ShadButton.outline(
+            child: const Text('OK'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showResultDialog(Uint8List imageBytes) {
@@ -95,38 +96,44 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text("Mosaic Result"),
         // maximize: true,
         child: AspectRatio(
-            aspectRatio: 1, // approximate, or allow flexible
-            child: InteractiveViewer(
-                child: Image.memory(imageBytes, fit: BoxFit.contain),
-            ),
-        ), 
+          aspectRatio: 1, // approximate, or allow flexible
+          child: InteractiveViewer(
+            child: Image.memory(imageBytes, fit: BoxFit.contain),
+          ),
+        ),
         actions: [
-            ShadButton.ghost(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(LucideIcons.x, size: 16), SizedBox(width: 8), Text('Close')]),
-            ),
-            ShadButton(
-                child: const Row(mainAxisSize: MainAxisSize.min, children: [Icon(LucideIcons.save, size: 16), SizedBox(width: 8), Text("Save")]),
-                onPressed: () async {
-                    String? outputFile = await FilePicker.platform.saveFile(
-                      dialogTitle: 'Save Mosaic',
-                      fileName: 'mosaic_result.png',
-                    );
+          ShadButton.ghost(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(LucideIcons.x, size: 16),
+              SizedBox(width: 8),
+              Text('Close')
+            ]),
+          ),
+          ShadButton(
+            child: const Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(LucideIcons.save, size: 16),
+              SizedBox(width: 8),
+              Text("Save")
+            ]),
+            onPressed: () async {
+              String? outputFile = await FilePicker.platform.saveFile(
+                dialogTitle: 'Save Mosaic',
+                fileName: 'mosaic_result.png',
+              );
 
-                    if (outputFile != null) {
-                      final file = File(outputFile);
-                      await file.writeAsBytes(imageBytes);
-                      if (mounted) {
-                         ShadToaster.of(ctx).show(
-                            ShadToast(
-                                title: const Text('Saved!'),
-                                description: Text('Saved to $outputFile'),
-                            )
-                         );
-                      }
-                    }
-                },
-            )
+              if (outputFile != null) {
+                final file = File(outputFile);
+                await file.writeAsBytes(imageBytes);
+                if (mounted) {
+                  ShadToaster.of(ctx).show(ShadToast(
+                    title: const Text('Saved!'),
+                    description: Text('Saved to $outputFile'),
+                  ));
+                }
+              }
+            },
+          )
         ],
       ),
     );
@@ -144,13 +151,15 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: ShadTheme.of(context).colorScheme.background,
         elevation: 0,
         actions: [
-           ShadButton.ghost(
-            child: Icon(themeProvider.isDarkMode ? LucideIcons.sun : LucideIcons.moon, size: 20),
+          ShadButton.ghost(
+            child: Icon(
+                themeProvider.isDarkMode ? LucideIcons.sun : LucideIcons.moon,
+                size: 20),
             onPressed: () {
-                themeProvider.toggleTheme();
+              themeProvider.toggleTheme();
             },
-           ),
-           ShadButton.ghost(
+          ),
+          ShadButton.ghost(
             child: const Icon(LucideIcons.trash2, size: 20),
             onPressed: () => gallery.clearGallery(),
           )
@@ -159,61 +168,70 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Column(
         children: [
           Container(
-             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-             decoration: BoxDecoration(
-                 border: Border(bottom: BorderSide(color: ShadTheme.of(context).colorScheme.border)),
-             ),
-             child: Row(
-                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                 children: [
-                     Column(
-                         crossAxisAlignment: CrossAxisAlignment.start,
-                         children: [
-                             Text("Library", style: ShadTheme.of(context).textTheme.large),
-                             Text("${gallery.count} images loaded", style: ShadTheme.of(context).textTheme.muted),
-                         ],
-                     ),
-                     if (gallery.isProcessing)
-                        Expanded(
-                            child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 20),
-                                child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                        Text("Processing ${(gallery.progress * 100).toInt()}%", style: ShadTheme.of(context).textTheme.small),
-                                        const SizedBox(height: 8),
-                                        LinearProgressIndicator(value: gallery.progress),
-                                    ],
-                                ),
-                            )
-                        )
-                     else 
-                        ShadButton(
-                            onPressed: () => gallery.pickAndProcessImages(),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(LucideIcons.imagePlus, size: 16),
-                                SizedBox(width: 8),
-                                Text("Upload Images"),
-                              ],
-                            ),
-                        )
-                 ],
-             ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            decoration: BoxDecoration(
+              border: Border(
+                  bottom: BorderSide(
+                      color: ShadTheme.of(context).colorScheme.border)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Library",
+                        style: ShadTheme.of(context).textTheme.large),
+                    Text("${gallery.count} images loaded",
+                        style: ShadTheme.of(context).textTheme.muted),
+                  ],
+                ),
+                if (gallery.isProcessing)
+                  Expanded(
+                      child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text("Processing ${(gallery.progress * 100).toInt()}%",
+                            style: ShadTheme.of(context).textTheme.small),
+                        const SizedBox(height: 8),
+                        LinearProgressIndicator(value: gallery.progress),
+                      ],
+                    ),
+                  ))
+                else
+                  ShadButton(
+                    onPressed: () => gallery.pickAndProcessImages(),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(LucideIcons.imagePlus, size: 16),
+                        SizedBox(width: 8),
+                        Text("Upload Images"),
+                      ],
+                    ),
+                  )
+              ],
+            ),
           ),
-
           Expanded(
             child: gallery.tiles.isEmpty
                 ? Center(
                     child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                            Icon(LucideIcons.images, size: 64, color: ShadTheme.of(context).colorScheme.mutedForeground),
-                            const SizedBox(height: 16),
-                            Text("No images in library", style: ShadTheme.of(context).textTheme.h4),
-                            Text("Upload 500+ images for best results", style: ShadTheme.of(context).textTheme.muted),
-                        ],
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(LucideIcons.images,
+                            size: 64,
+                            color: ShadTheme.of(context)
+                                .colorScheme
+                                .mutedForeground),
+                        const SizedBox(height: 16),
+                        Text("No images in library",
+                            style: ShadTheme.of(context).textTheme.h4),
+                        Text("Upload 500+ images for best results",
+                            style: ShadTheme.of(context).textTheme.muted),
+                      ],
                     ),
                   )
                 : GridView.builder(
@@ -229,16 +247,30 @@ class _HomeScreenState extends State<HomeScreen> {
                       final tile = gallery.tiles[index];
                       // Use ShadCard for nice frames
                       return ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: kIsWeb
-                              ? Container(
-                                  color: Color.fromARGB(255, tile.r, tile.g, tile.b),
-                                )
-                              : Image.file(
-                                  File(tile.path),
-                                  fit: BoxFit.cover,
-                                  cacheWidth: 100,
-                                ),
+                        borderRadius: BorderRadius.circular(8),
+                        child: kIsWeb
+                            ? FutureBuilder<Uint8List?>(
+                                // Fetch the image bytes from Hive using the ID
+                                future: Provider.of<GalleryProvider>(context,
+                                        listen: false)
+                                    .getImageFromStorage(tile.path),
+                                builder: (context, snapshot) {
+                                  if (snapshot.hasData &&
+                                      snapshot.data != null) {
+                                    return Image.memory(snapshot.data!,
+                                        fit: BoxFit.cover, cacheWidth: 100);
+                                  }
+                                  // Fallback to color while loading or if failed
+                                  return Container(
+                                      color: Color.fromARGB(
+                                          255, tile.r, tile.g, tile.b));
+                                },
+                              )
+                            : Image.file(
+                                File(tile.path),
+                                fit: BoxFit.cover,
+                                cacheWidth: 100,
+                              ),
                       );
                     },
                   ),
@@ -247,29 +279,30 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       // Bottom Action Bar
       bottomNavigationBar: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: ShadTheme.of(context).colorScheme.border)),
-              color: ShadTheme.of(context).colorScheme.card,
-          ),
-          child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                  ShadButton(
-                    size: ShadButtonSize.lg,
-                    enabled: (!gallery.isProcessing && gallery.count > 10),
-                    onPressed: _pickTargetAndGenerate,
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                         Icon(LucideIcons.wand, size: 18),
-                         SizedBox(width: 8),
-                         Text("Generate Mosaic"),
-                      ],
-                    ),
-                  ),
-              ],
-          ),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border(
+              top: BorderSide(color: ShadTheme.of(context).colorScheme.border)),
+          color: ShadTheme.of(context).colorScheme.card,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            ShadButton(
+              size: ShadButtonSize.lg,
+              enabled: (!gallery.isProcessing && gallery.count > 10),
+              onPressed: _pickTargetAndGenerate,
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(LucideIcons.wand, size: 18),
+                  SizedBox(width: 8),
+                  Text("Generate Mosaic"),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
