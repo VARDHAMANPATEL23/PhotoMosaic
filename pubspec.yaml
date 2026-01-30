@@ -1,0 +1,40 @@
+name: photomosaic_app
+description: "A local photomosaic generator."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.1.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # UI & State
+  provider: ^6.0.5
+
+  # File Handling (Web & Desktop friendly)
+  file_picker: ^8.0.0
+
+  # Image Processing (Pure Dart)
+  image: ^4.1.7
+
+  # Local Database
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.2
+  path: ^1.9.1
+  shadcn_ui: ^0.45.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+  # Code Generation for Hive
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.6
+
+flutter:
+  uses-material-design: true
