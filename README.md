@@ -7,10 +7,13 @@ This app runs entirely on your device (Linux Desktop or Web Browser). It analyze
 ## ✨ Features
 
 - **🔒 100% Local & Private**: No cloud processing. Your photos never leave your device.
-- **🖥️ Cross-Platform**: Optimized for Linux Desktop and Web, with architecture ready for Mobile.
+- **🖥️ Cross-Platform**: Optimized for Linux Desktop, Windows Desktop and Web, with architecture ready for Mobile.
 - **📦 Smart Storage (Hive)**: Uses a high-performance NoSQL database to store processed image tiles efficiently.
 - **⚡ Multi-Threaded**: Heavy image processing runs in background Isolates, keeping the UI smooth.
-- **🎨 Smart Color Matching**: Algorithms calculate Euclidean color distance to find the perfect tile for every pixel block.
+- **🧠 Advanced Mosaic Algorithm**:
+    - **Adaptive Tile Sizing**: Uses local variance analysis to use smaller tiles for details (eyes, text) and larger tiles for flat areas.
+    - **Smart Tinting**: Subtly tints tiles to better match the target processing without losing the original image authenticity.
+    - **Dynamic Rotation**: Slightly rotates tiles for a more organic, natural look.
 - **🌙 Dynamic Theming**: Beautiful UI built with **Shadcn UI**, featuring seamless light/dark mode switching.
 - **💾 Save & Export**: Export your final high-resolution mosaic to your local file system.
 
