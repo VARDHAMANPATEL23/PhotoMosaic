@@ -55,12 +55,14 @@ class _HomeScreenState extends State<HomeScreen> {
       if (targetBytes != null) {
         try {
           // 3. Run the Magic!
-          await gallery.generateMosaic(targetBytes);
+          // 3. Run Generator
+          gallery.setTargetImage(targetBytes);
+          await gallery.generateMosaic();
 
           // 4. Show Result OR Error
           if (mounted) {
             if (gallery.generatedMosaic != null) {
-              _showResultDialog(gallery.generatedMosaic!);
+              _showResultDialog();
             } else {
               _showErrorDialog();
             }
@@ -89,52 +91,169 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showResultDialog(Uint8List imageBytes) {
+  void _showResultDialog() {
     showShadDialog(
       context: context,
-      builder: (ctx) => ShadDialog(
-        title: const Text("Mosaic Result"),
-        // maximize: true,
-        child: AspectRatio(
-          aspectRatio: 1, // approximate, or allow flexible
-          child: InteractiveViewer(
-            child: Image.memory(imageBytes, fit: BoxFit.contain),
-          ),
-        ),
-        actions: [
-          ShadButton.ghost(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(LucideIcons.x, size: 16),
-              SizedBox(width: 8),
-              Text('Close')
-            ]),
-          ),
-          ShadButton(
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(LucideIcons.save, size: 16),
-              SizedBox(width: 8),
-              Text("Save")
-            ]),
-            onPressed: () async {
-              String? outputFile = await FilePicker.platform.saveFile(
-                dialogTitle: 'Save Mosaic',
-                fileName: 'mosaic_result.png',
-              );
+      builder: (ctx) => Consumer<GalleryProvider>(
+        builder: (context, gallery, child) {
+          return ShadDialog(
+            title: const Text("Mosaic Result"),
+            // maximize: true,
+            child: Material(
+              type: MaterialType.transparency,
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 500, maxHeight: 700),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black12,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          if (gallery.generatedMosaic != null)
+                            InteractiveViewer(
+                              child: Image.memory(
+                                gallery.generatedMosaic!,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          if (gallery.isProcessing)
+                            Container(
+                              color: Colors.black45,
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // --- Controls ---
+                  
+                  // Density
+                  Row(
+                    children: [
+                      const Text("Density", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Spacer(),
+                      Text("${gallery.density.toInt()} tiles/row"),
+                    ],
+                  ),
+                  Slider(
+                    value: gallery.density,
+                    min: 10,
+                    max: 100,
+                    onChanged: gallery.isProcessing 
+                        ? null 
+                        : (v) => gallery.setDensity(v),
+                  ),
+                  
+                  // Quality
+                  Row(
+                    children: [
+                      const Text("Quality (Tint/Blend)", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Spacer(),
+                      Text("${(gallery.quality * 100).toInt()}%"),
+                    ],
+                  ),
+                  Slider(
+                    value: gallery.quality,
+                    min: 0.0,
+                    max: 0.8,
+                    onChanged: gallery.isProcessing 
+                        ? null 
+                        : (v) => gallery.setQuality(v),
+                  ),
+                  
+                  // Rotation
+                  Row(
+                    children: [
+                      const Text("Rotation Chaos", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Spacer(),
+                      Text("${gallery.rotation.toInt()}°"),
+                    ],
+                  ),
+                  Slider(
+                    value: gallery.rotation,
+                    min: 0.0,
+                    max: 45.0,
+                    onChanged: gallery.isProcessing 
+                        ? null 
+                        : (v) => gallery.setRotation(v),
+                  ),
 
-              if (outputFile != null) {
-                final file = File(outputFile);
-                await file.writeAsBytes(imageBytes);
-                if (mounted) {
-                  ShadToaster.of(ctx).show(ShadToast(
-                    title: const Text('Saved!'),
-                    description: Text('Saved to $outputFile'),
-                  ));
-                }
-              }
-            },
-          )
-        ],
+                  const SizedBox(height: 16),
+                  
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                       ShadButton.outline(
+                        enabled: !gallery.isProcessing,
+                        child: const Row(children:[
+                            Icon(LucideIcons.shuffle, size: 16),
+                            SizedBox(width: 8),
+                            Text("Randomize")
+                        ]),
+                        onPressed: () {
+                           gallery.randomizeSeed();
+                           gallery.generateMosaic();
+                        },
+                      ),
+                      ShadButton(
+                        enabled: !gallery.isProcessing,
+                        child: const Row(children:[
+                            Icon(LucideIcons.refreshCw, size: 16),
+                            SizedBox(width: 8),
+                            Text("Regenerate")
+                        ]),
+                        onPressed: () => gallery.generateMosaic(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+            ),
+            actions: [
+              ShadButton.ghost(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Close'),
+              ),
+              ShadButton(
+                child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(LucideIcons.save, size: 16),
+                  SizedBox(width: 8),
+                  Text("Save Image")
+                ]),
+                onPressed: gallery.generatedMosaic == null ? null : () async {
+                  String? outputFile = await FilePicker.platform.saveFile(
+                    dialogTitle: 'Save Mosaic',
+                    fileName: 'mosaic_result.png',
+                  );
+
+                  if (outputFile != null && gallery.generatedMosaic != null) {
+                    final file = File(outputFile);
+                    await file.writeAsBytes(gallery.generatedMosaic!);
+                    if (mounted) {
+                      ShadToaster.of(ctx).show(ShadToast(
+                        title: const Text('Saved!'),
+                        description: Text('Saved to $outputFile'),
+                      ));
+                    }
+                  }
+                },
+              )
+            ],
+          );
+        },
       ),
     );
   }

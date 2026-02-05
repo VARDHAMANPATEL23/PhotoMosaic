@@ -13,12 +13,18 @@ class MosaicInput {
   final List<TileColor> tiles; 
   final List<Uint8List> tileImagesBytes;
   final int tilesPerRow;
+  final double rotationAmount;
+  final double quality; // interpreted as tint/blend strength or detail
+  final int seed;
 
   MosaicInput(
       {required this.targetBytes,
       required this.tiles,
       required this.tileImagesBytes,
-      this.tilesPerRow = 50});
+      this.tilesPerRow = 50,
+      this.rotationAmount = 30.0,
+      this.quality = 0.5,
+      this.seed = 0});
 }
 
 class _TileStats {
@@ -34,7 +40,7 @@ class MosaicGenerator {
     final img.Image? target = img.decodeImage(input.targetBytes);
     if (target == null) throw Exception("Invalid Target Image");
 
-    final Random random = Random();
+    final Random random = Random(input.seed);
 
     // 1. Preprocess Tiles
     List<_TileStats> tileLibrary = [];
@@ -134,7 +140,7 @@ class MosaicGenerator {
         // Small tiles (detail) should probably be aligned to avoid aliasing artifacts or noise?
         // Actually random rotation helps "natural" look, but for text, too much rotation might be bad.
         // Let's reduce rotation range.
-        double angle = (random.nextDouble() - 0.5) * 30; 
+        double angle = (random.nextDouble() - 0.5) * input.rotationAmount; 
         drawnTile = img.copyRotate(drawnTile, angle: angle);
 
         // TINTING Logic
@@ -149,7 +155,11 @@ class MosaicGenerator {
         // If match is good (dist low), low contrast.
         // If match is bad (dist high), increase tint to "force" the color.
         // Base tint 30%. Max tint 60% if terrible match.
-        double tintStrength = 0.30 + (colorDist / 442.0 * 0.4); // 442 is max dist (sqrt(255^2 * 3))
+        // Quality controls the baseline tint. higher quality = more tint (closer to target)
+        // input.quality is 0.0 to 1.0.
+        // Base tint ranges from 0.0 to 0.8
+        double tintBase = input.quality * 0.8;
+        double tintStrength = tintBase + (colorDist / 442.0 * 0.2); 
         if(tintStrength > 0.7) tintStrength = 0.7;
 
         _tintImage(drawnTile, avgColor.r, avgColor.g, avgColor.b, tintStrength);

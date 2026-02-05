@@ -28,6 +28,19 @@ class GalleryProvider extends ChangeNotifier {
   Uint8List? _generatedMosaic;
   Uint8List? get generatedMosaic => _generatedMosaic;
 
+  // --- Generation Parameters ---
+  double _density = 50.0;
+  double _quality = 0.5;
+  double _rotation = 30.0;
+  int _seed = 0;
+  Uint8List? _targetBytes;
+
+  double get density => _density;
+  double get quality => _quality;
+  double get rotation => _rotation;
+  int get seed => _seed;
+  Uint8List? get targetBytes => _targetBytes;
+
   // --- Initialization ---
   Future<void> init() async {
     await _storage.init();
@@ -39,6 +52,12 @@ class GalleryProvider extends ChangeNotifier {
   Future<Uint8List?> getImageFromStorage(String path) {
     return _storage.getImage(path);
   }
+
+  void setDensity(double v) { _density = v; notifyListeners(); }
+  void setQuality(double v) { _quality = v; notifyListeners(); }
+  void setRotation(double v) { _rotation = v; notifyListeners(); }
+  void randomizeSeed() { _seed = DateTime.now().millisecondsSinceEpoch; notifyListeners(); }
+  void setTargetImage(Uint8List bytes) { _targetBytes = bytes; notifyListeners(); }
 
   // --- Upload & Process Images (With Progress Bar) ---
   Future<void> pickAndProcessImages() async {
@@ -115,8 +134,14 @@ class GalleryProvider extends ChangeNotifier {
   }
 
   // --- Generate Mosaic (Phase 4 Logic) ---
-  Future<void> generateMosaic(Uint8List targetImageBytes) async {
-    if (_tiles.isEmpty) return;
+  Future<void> generateMosaic([Uint8List? newTarget]) async {
+    if (newTarget != null) {
+      _targetBytes = newTarget;
+    }
+    
+    if (_tiles.isEmpty || _targetBytes == null) return;
+    
+    final targetImageBytes = _targetBytes!;
 
     _isProcessing = true;
     notifyListeners();
@@ -144,6 +169,10 @@ class GalleryProvider extends ChangeNotifier {
             targetBytes: targetImageBytes,
             tiles: simpleTiles, // Sending the safe list
             tileImagesBytes: tileBytesList,
+            tilesPerRow: _density.toInt(),
+            quality: _quality,
+            rotationAmount: _rotation,
+            seed: _seed,
           ));
 
       _generatedMosaic = result;
